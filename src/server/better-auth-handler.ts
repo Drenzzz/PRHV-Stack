@@ -10,7 +10,8 @@ import { getAuthConfig } from "./better-auth";
 let authSingleton: ReturnType<typeof betterAuth> | undefined;
 
 // On Cloudflare the D1 binding is request-scoped (fresh instance per request); elsewhere it's memoized.
-function getAuth(runtime: RuntimeAdapter) {
+// Exported for API handlers that need the request-scoped auth instance.
+export function getAuth(runtime: RuntimeAdapter) {
   authSingleton ??= betterAuth(getAuthConfig(runtime));
   return authSingleton;
 }

@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconDashboard, IconListDetails, IconChartBar, IconFolder, IconUsers, IconCamera, IconFileDescription, IconFileAi, IconSettings, IconHelp, IconSearch, IconDatabase, IconReport, IconFileWord, IconInnerShadowTop } from "@tabler/icons-react"
+import { IconDashboard, IconListDetails, IconChartBar, IconFolder, IconUsers, IconCamera, IconFileDescription, IconFileAi, IconSettings, IconHelp, IconSearch, IconDatabase, IconReport, IconFileWord, IconInnerShadowTop, IconShoppingBag } from "@tabler/icons-react"
 
 const data = {
   navMain: [
@@ -24,6 +24,14 @@ const data = {
       url: "/dashboard",
       icon: (
         <IconDashboard
+        />
+      ),
+    },
+    {
+      title: "Products",
+      url: "/dashboard/products",
+      icon: (
+        <IconShoppingBag
         />
       ),
     },

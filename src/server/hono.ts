@@ -1,6 +1,5 @@
 import { betterAuthHandler, betterAuthSessionMiddleware } from "./better-auth-handler";
 import { dbMiddleware } from "./db-middleware";
-import { createTodoHandler } from "./create-todo-handler";
 import vike from "@vikejs/hono";
 import { Hono } from "hono";
 
@@ -14,7 +13,6 @@ function getApp() {
     betterAuthSessionMiddleware,
     // Better Auth route. See https://better-auth.com/docs/installation
     betterAuthHandler,
-    createTodoHandler,
   ]);
 
   return app;

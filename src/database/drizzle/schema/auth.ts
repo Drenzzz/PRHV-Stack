@@ -25,15 +25,17 @@ export const session = pgTable("session", {
   userId: pgText("user_id").notNull(),
 });
 
-// Since Better Auth 1.7 account identity is scoped by `issuer`: the column is required and
-// (issuer, accountId) must be unique. https://better-auth.com/docs/guides/1-7-upgrade-guide
+// Since Better Auth 1.7 account identity is scoped by `issuer`: the column exists and
+// (issuer, accountId) should be unique. Nullable because newer 1.7.x releases no longer
+// write it on credential accounts; inserts would fail on a NOT NULL column.
+// https://better-auth.com/docs/guides/1-7-upgrade-guide
 export const account = pgTable(
   "account",
   {
     id: pgText("id").primaryKey(),
     accountId: pgText("account_id").notNull(),
     providerId: pgText("provider_id").notNull(),
-    issuer: pgText("issuer").notNull(),
+    issuer: pgText("issuer"),
     userId: pgText("user_id").notNull(),
     accessToken: pgText("access_token"),
     refreshToken: pgText("refresh_token"),

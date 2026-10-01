@@ -26,6 +26,12 @@ export function getAuthConfig(runtime?: RuntimeAdapter): BetterAuthOptions {
     emailAndPassword: {
       enabled: true,
     },
+    // Extra origins allowed to call the auth API (e.g. dev on another port).
+    // Comma-separated via TRUSTED_ORIGINS.
+    trustedOrigins: (env.TRUSTED_ORIGINS ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     // GitHub is only enabled once its credentials are set, so the app runs out of the box without them.
     socialProviders:
       env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET

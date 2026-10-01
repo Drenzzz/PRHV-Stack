@@ -6,4 +6,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [vike(), react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": new URL(".", import.meta.url).pathname,
+    },
+  },
 });

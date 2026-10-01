@@ -1,4 +1,4 @@
-import "./server/load";
+import "./src/server/load";
 import { defineConfig } from "drizzle-kit";
 
 if (!process.env.DATABASE_URL) {
@@ -7,8 +7,8 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./database/drizzle/schema/*",
-  out: "./database/migrations",
+  schema: "./src/database/drizzle/schema/*",
+  out: "./src/database/migrations",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },

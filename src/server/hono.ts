@@ -5,6 +5,13 @@ import { metricsHandler, uptimeDailyHandler } from "./metrics";
 import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
 import { createChannelHandler, listChannelsHandler, testChannelHandler } from "./channels";
 import {
+  createStatusPageHandler,
+  deleteStatusPageHandler,
+  listStatusPagesHandler,
+  publicStatusHandler,
+  updateStatusPageHandler,
+} from "./status";
+import {
   createMonitorHandler,
   checkNowHandler,
   deleteMonitorHandler,
@@ -39,6 +46,11 @@ function getApp() {
     createChannelHandler,
     listChannelsHandler,
     testChannelHandler,
+    listStatusPagesHandler,
+    createStatusPageHandler,
+    updateStatusPageHandler,
+    deleteStatusPageHandler,
+    publicStatusHandler,
   ]);
 
   return app;

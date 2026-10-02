@@ -14,11 +14,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconListDetails, IconSettings, IconInnerShadowTop } from "@tabler/icons-react"
+import { IconAlertTriangle, IconListDetails, IconSettings, IconInnerShadowTop, IconBroadcast, IconWorld } from "@tabler/icons-react"
 
 const data = {
-  // M3 covers Monitors only; Incidents/Channels/Status Pages/Settings land in M4
-  // (no dead links). Decision in the M3 plan.
   navMain: [
     {
       title: "Monitors",
@@ -27,11 +25,32 @@ const data = {
         <IconListDetails />
       ),
     },
+    {
+      title: "Incidents",
+      url: "/dashboard/incidents",
+      icon: (
+        <IconAlertTriangle />
+      ),
+    },
+    {
+      title: "Channels",
+      url: "/dashboard/channels",
+      icon: (
+        <IconBroadcast />
+      ),
+    },
+    {
+      title: "Status Pages",
+      url: "/dashboard/status-pages",
+      icon: (
+        <IconWorld />
+      ),
+    },
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: (
         <IconSettings />
       ),

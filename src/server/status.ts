@@ -15,6 +15,14 @@ import {
 
 const db = dbPostgres();
 
+// Shape returned to the client for status-page management.
+export interface PublicStatusPage {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+}
+
 // Status pages (REQ-022, REQ-023): owner CRUD + public read by slug. The public
 // payload is cached in Redis for 60s (06 §7) and invalidated when the owner
 // edits the page; monitor/incident changes propagate within the TTL window.

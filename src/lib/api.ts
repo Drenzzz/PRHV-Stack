@@ -7,9 +7,10 @@ import type { MonitorListRow, DayCell } from "../database/drizzle/queries/dashbo
 import type { MetricsResult, BucketRow } from "../database/drizzle/queries/checks";
 import type { IncidentRow } from "../server/incidents";
 import type { PublicChannel } from "../server/channels";
+import type { PublicStatusPage } from "../server/status";
 import type { ErrorCode } from "../server/http";
 
-export type { Monitor, NewMonitor, MonitorListRow, DayCell, BucketRow, MetricsResult, IncidentRow, PublicChannel, ErrorCode };
+export type { Monitor, NewMonitor, MonitorListRow, DayCell, BucketRow, MetricsResult, IncidentRow, PublicChannel, PublicStatusPage, ErrorCode };
 
 // Error shape returned by every app route (04 §3). `/api/auth/*` uses Better
 // Auth's native shape and is not routed through here.
@@ -114,4 +115,14 @@ export const api = {
     request<{ channel: PublicChannel }>("/api/channels", json("POST", data)),
 
   testChannel: (id: string) => request<{ delivered: boolean; error?: string }>(`/api/channels/${id}/test`, json("POST")),
+
+  listStatusPages: () => request<{ pages: PublicStatusPage[] }>("/api/status-pages"),
+
+  createStatusPage: (data: { slug: string; title: string; description?: string; monitorIds?: string[] }) =>
+    request<{ page: PublicStatusPage }>("/api/status-pages", json("POST", data)),
+
+  updateStatusPage: (id: string, data: { title?: string; description?: string | null; monitorIds?: string[] }) =>
+    request<{ page: PublicStatusPage }>(`/api/status-pages/${id}`, json("PATCH", data)),
+
+  deleteStatusPage: (id: string) => request<void>(`/api/status-pages/${id}`, json("DELETE")),
 };

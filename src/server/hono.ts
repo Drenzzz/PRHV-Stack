@@ -3,6 +3,7 @@ import { dbMiddleware } from "./db-middleware";
 import { liveEventsHandler } from "./sse";
 import { metricsHandler } from "./metrics";
 import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
+import { createChannelHandler, listChannelsHandler, testChannelHandler } from "./channels";
 import {
   createMonitorHandler,
   checkNowHandler,
@@ -34,6 +35,9 @@ function getApp() {
     metricsHandler,
     monitorIncidentsHandler,
     allIncidentsHandler,
+    createChannelHandler,
+    listChannelsHandler,
+    testChannelHandler,
   ]);
 
   return app;

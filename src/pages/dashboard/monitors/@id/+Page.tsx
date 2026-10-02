@@ -9,7 +9,7 @@ import { StatusBadge, type MonitorStatus } from "@/components/status-badge";
 import { LatencyChart } from "../../../../components/latency-chart";
 import { UptimeBar } from "../../../../components/uptime-bar";
 import { IncidentLog } from "../../../../components/incident-log";
-import { api, type BucketRow, type DayCell, type IncidentRow, type Monitor } from "../../../../lib/api";
+import { api, type BucketRow, type DayCell, type IncidentRow, type Monitor, type MonitorListRow } from "../../../../lib/api";
 import { showApiError, redirectToLogin, isSessionExpired } from "../../../../lib/errors";
 import { useLiveEvents } from "../../../../hooks/use-live-events";
 import { formatMs, formatUptime } from "../../../../lib/format";
@@ -35,6 +35,7 @@ export default function Page() {
   const { status: liveStatus, event, generation } = useLiveEvents(monitorId ? [monitorId] : undefined);
 
   const [monitor, setMonitor] = useState<Monitor | null>(null);
+  const [summary, setSummary] = useState<MonitorListRow | null>(null);
   const [range, setRange] = useState<Range>("24h");
   const [series, setSeries] = useState<BucketRow[]>([]);
   const [uptime, setUptime] = useState<{ days: number; series: DayCell[] } | null>(null);
@@ -45,13 +46,17 @@ export default function Page() {
   const load = useCallback(async () => {
     if (!monitorId) return;
     try {
-      const [m, metrics, daily, incs] = await Promise.all([
+      // listMonitors carries the derived fields (status/lastLatency/uptime30d)
+      // that getMonitor does not — one extra request keeps the header honest.
+      const [m, metrics, daily, incs, list] = await Promise.all([
         api.getMonitor(monitorId),
         api.metrics(monitorId, range, BUCKET_BY_RANGE[range]),
         api.uptimeDaily(monitorId, 90),
         api.monitorIncidents(monitorId),
+        api.listMonitors(),
       ]);
       setMonitor(m.monitor);
+      setSummary(list.monitors.find((row) => row.id === monitorId) ?? null);
       setSeries(metrics.series);
       setUptime(daily);
       setIncidents(incs.incidents);
@@ -67,14 +72,18 @@ export default function Page() {
     void load();
   }, [load]);
 
-  // Apply live check events to the header values; refetch when the stream reopens.
+  // Apply live check events to the header values. Functional update keyed only
+  // on `event` — including `monitor` in deps would re-trigger on every state
+  // change and loop (setMonitor inside effect with object dep = infinite render).
   useEffect(() => {
-    if (!event || event.type !== "check" || !monitor) return;
-    setMonitor({
-      ...monitor,
-      currentStatus: event.ok ? "up" : "down",
-    } as Monitor);
-  }, [event, monitor]);
+    if (!event || event.type !== "check") return;
+    setMonitor((prev) => {
+      if (!prev) return prev;
+      const nextStatus = event.ok ? "up" : "down";
+      if (prev.currentStatus === nextStatus) return prev;
+      return { ...prev, currentStatus: nextStatus } as Monitor;
+    });
+  }, [event]);
 
   useEffect(() => {
     if (generation > 0) void load();
@@ -189,9 +198,9 @@ export default function Page() {
         <CardContent className="space-y-3">
           <UptimeBar series={uptime?.series ?? []} />
           <p className="font-mono text-xs tabular-nums text-muted-foreground">
-            Uptime 30d: {formatUptime(monitorUptime30d(monitor))}
+            Uptime 30d: {formatUptime(summary?.uptime30d ?? null)}
             {" · "}
-            Last latency: {formatMs(event?.type === "check" ? event.latencyMs : null)}
+            Last latency: {formatMs(event?.type === "check" ? event.latencyMs : (summary?.lastLatencyMs ?? null))}
           </p>
         </CardContent>
       </Card>
@@ -207,9 +216,4 @@ export default function Page() {
       </Card>
     </div>
   );
-}
-
-function monitorUptime30d(monitor: Monitor): number | null {
-  const maybe = monitor as unknown as { uptime30d?: number | null };
-  return maybe.uptime30d ?? null;
 }

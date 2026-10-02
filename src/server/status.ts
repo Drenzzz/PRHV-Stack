@@ -168,11 +168,16 @@ export const deleteStatusPageHandler: UniversalHandler = enhance(
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
     const id = runtime.params!.id;
-    const rows = (await db.execute(sql`
-      DELETE FROM status_pages WHERE id = ${id} AND user_id = ${userId} RETURNING slug
+    // Ownership first — never touch join rows of a page we don't own (REQ-032).
+    const owned = (await db.execute(sql`
+      SELECT slug FROM status_pages WHERE id = ${id} AND user_id = ${userId}
     `)) as unknown as { slug: string }[];
-    if (rows.length === 0) return notFound();
-    await invalidateCache(rows[0].slug);
+    if (owned.length === 0) return notFound();
+    // FK status_page_monitors has no ON DELETE CASCADE (0004) — drop the join
+    // rows first or the delete fails with a FK violation.
+    await db.execute(sql`DELETE FROM status_page_monitors WHERE status_page_id = ${id}`);
+    await db.execute(sql`DELETE FROM status_pages WHERE id = ${id}`);
+    await invalidateCache(owned[0].slug);
     return new Response(null, { status: 204 });
   },
   { name: "lunite:delete-status-page", path: "/api/status-pages/:id", method: "DELETE", immutable: false },

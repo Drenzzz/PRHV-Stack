@@ -2,6 +2,7 @@
   "name": "lunite",
   "scripts": {
     "dev": "vike dev",
+    "worker": "bun src/worker/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "build": "vike build",
@@ -29,6 +30,7 @@
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.12",
+    "ioredis": "^6.0.0",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.9",
     "react": "^19.3.0",

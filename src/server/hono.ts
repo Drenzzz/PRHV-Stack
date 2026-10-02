@@ -6,6 +6,7 @@ import { metricsHandler, uptimeDailyHandler } from "./metrics";
 import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
 import { createChannelHandler, listChannelsHandler, testChannelHandler } from "./channels";
 import { createApiKeyHandler, listApiKeysHandler, revokeApiKeyHandler } from "./api-keys";
+import { docsHandler, specHandler } from "./openapi";
 import {
   createStatusPageHandler,
   deleteStatusPageHandler,
@@ -36,6 +37,9 @@ function getApp() {
     betterAuthSessionMiddleware,
     // Better Auth route. See https://better-auth.com/docs/installation
     betterAuthHandler,
+    // API docs must win over the Vike page fallthrough (02 §8)
+    specHandler,
+    docsHandler,
     liveEventsHandler,
     listMonitorsHandler,
     createMonitorHandler,

@@ -1,7 +1,7 @@
 import { betterAuthHandler, betterAuthSessionMiddleware } from "./better-auth-handler";
 import { dbMiddleware } from "./db-middleware";
 import { liveEventsHandler } from "./sse";
-import { metricsHandler } from "./metrics";
+import { metricsHandler, uptimeDailyHandler } from "./metrics";
 import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
 import { createChannelHandler, listChannelsHandler, testChannelHandler } from "./channels";
 import {
@@ -33,6 +33,7 @@ function getApp() {
     deleteMonitorHandler,
     checkNowHandler,
     metricsHandler,
+    uptimeDailyHandler,
     monitorIncidentsHandler,
     allIncidentsHandler,
     createChannelHandler,

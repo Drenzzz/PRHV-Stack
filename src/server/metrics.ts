@@ -8,6 +8,7 @@ import {
   metricsFromRollups,
   monitorExistsForUser,
 } from "../database/drizzle/queries/checks";
+import { uptimeDaily } from "../database/drizzle/queries/dashboard";
 
 // Metrics API (REQ-017): uptime + percentile series per monitor.
 // Window ≤7d reads raw checks (exact, CF-003); longer windows read rollups
@@ -50,4 +51,25 @@ export const metricsHandler: UniversalHandler = enhance(
     return Response.json(result);
   },
   { name: "lunite:metrics", path: "/api/monitors/:id/metrics", method: "GET", immutable: false },
+);
+
+// 90-day uptime bar data (REQ-023): one cell per day, null = no data.
+export const uptimeDailyHandler: UniversalHandler = enhance(
+  async (request, _context, runtime) => {
+    const userId = await requireUserId(request, runtime);
+    if (!userId) return unauthorized();
+
+    const id = metricsId(request);
+    if (!(await monitorExistsForUser(id, userId))) return notFound();
+
+    const raw = new URL(request.url).searchParams.get("days") ?? "90";
+    const days = parseInt(raw, 10);
+    if (!Number.isInteger(days) || days < 1 || days > 366) {
+      return validation("Invalid days", [{ path: "days", reason: "must be an integer between 1 and 366" }]);
+    }
+
+    const series = await uptimeDaily(id, days);
+    return Response.json({ days, series });
+  },
+  { name: "lunite:uptime-daily", path: "/api/monitors/:id/uptime-daily", method: "GET", immutable: false },
 );

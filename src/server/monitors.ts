@@ -7,9 +7,9 @@ import {
   createMonitor,
   deleteMonitor,
   getMonitor,
-  listMonitors,
   updateMonitor,
 } from "../database/drizzle/queries/monitors";
+import { listMonitorsEnriched } from "../database/drizzle/queries/dashboard";
 import { claimMonitorNow } from "../worker/scheduler";
 
 // Monitor CRUD (REQ-005..008). Ownership → 404 without leak (REQ-032).
@@ -49,7 +49,7 @@ export const listMonitorsHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
-    return Response.json({ monitors: await listMonitors(userId) });
+    return Response.json({ monitors: await listMonitorsEnriched(userId) });
   },
   { name: "lunite:list-monitors", path: "/api/monitors", method: "GET", immutable: false },
 );

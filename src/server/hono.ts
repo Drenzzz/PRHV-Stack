@@ -1,5 +1,6 @@
 import { betterAuthHandler, betterAuthSessionMiddleware } from "./better-auth-handler";
 import { dbMiddleware } from "./db-middleware";
+import { liveEventsHandler } from "./sse";
 import {
   createMonitorHandler,
   deleteMonitorHandler,
@@ -20,6 +21,7 @@ function getApp() {
     betterAuthSessionMiddleware,
     // Better Auth route. See https://better-auth.com/docs/installation
     betterAuthHandler,
+    liveEventsHandler,
     listMonitorsHandler,
     createMonitorHandler,
     getMonitorHandler,

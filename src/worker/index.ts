@@ -7,6 +7,7 @@ import { claimDueMonitors } from "./scheduler";
 import { assertProbeTargetAllowed } from "./prober/ssrf";
 import { recordCheck, applyProbeOutcome } from "./storage";
 import { evaluateContract } from "./contract";
+import { publishCheckEvent } from "./events";
 import type { ProbeResult } from "./prober";
 
 const env = workerEnv();
@@ -86,6 +87,13 @@ async function tick(n: number): Promise<void> {
         const outcome: ProbeResult = { ...result, ok: verdict.ok, error: verdict.error ?? result.error };
         await recordCheck(monitor.id, env.region, outcome);
         await applyProbeOutcome(monitor, outcome.ok);
+        await publishCheckEvent({
+          monitorId: monitor.id,
+          ok: outcome.ok,
+          statusCode: outcome.statusCode,
+          latencyMs: outcome.latencyMs,
+          at: new Date().toISOString(),
+        });
         console.log(`[worker] probe ${monitor.name} ok=${outcome.ok} status=${outcome.statusCode} ${outcome.error ?? ""}`);
       } catch (e) {
         // Never let one bad monitor kill the loop (04 §4).

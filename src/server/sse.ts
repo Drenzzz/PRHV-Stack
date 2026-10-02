@@ -18,13 +18,10 @@ export const liveEventsHandler: UniversalHandler = enhance(
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         let closed = false;
+        let heartbeat: ReturnType<typeof setInterval> | undefined;
         const send = (line: string) => {
           if (!closed) controller.enqueue(encoder.encode(line));
         };
-
-        send(": connected\n\n");
-        // Heartbeat keeps proxies from idling the connection out (04 §4).
-        const heartbeat = setInterval(() => send(": heartbeat\n\n"), 15000);
 
         const subscriber = redisSubscriber();
         const onMessage = (channel: string, raw: string) => {
@@ -37,16 +34,23 @@ export const liveEventsHandler: UniversalHandler = enhance(
           } catch {
             // client vanished between check and enqueue — closed flag catches the rest
             closed = true;
-            clearInterval(heartbeat);
+            if (heartbeat) clearInterval(heartbeat);
           }
         };
         await subscriber.subscribe(EVENTS_CHANNEL);
         subscriber.on("message", onMessage);
 
+        // ": connected" is the readiness signal — sent only after the subscription
+        // is live, so a client that waits for it never races an event published
+        // before we were listening.
+        send(": connected\n\n");
+        // Heartbeat keeps proxies from idling the connection out (04 §4).
+        heartbeat = setInterval(() => send(": heartbeat\n\n"), 15000);
+
         // @universal-middleware aborts the request signal when the client disconnects.
         request.signal?.addEventListener("abort", () => {
           closed = true;
-          clearInterval(heartbeat);
+          if (heartbeat) clearInterval(heartbeat);
           subscriber.off("message", onMessage);
           subscriber.unsubscribe(EVENTS_CHANNEL).catch(() => {});
           try {

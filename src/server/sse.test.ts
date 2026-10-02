@@ -17,6 +17,20 @@ test("SSE stream with session → event-stream, published check arrives (REQ-024
   expect(res.status).toBe(200);
   expect(res.headers.get("content-type")).toContain("text/event-stream");
 
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+
+  // Wait for the readiness signal — the server emits ": connected" only after
+  // its Redis subscription is live, so publishing after it cannot be missed.
+  let received = "";
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline && !received.includes(": connected")) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    received += decoder.decode(value, { stream: true });
+  }
+  expect(received).toContain(": connected");
+
   // The worker publishes via redisPublisher(); here we publish directly on the
   // same channel to prove the server relays Redis messages to the stream.
   const { redisPublisher } = await import("../lib/redis");
@@ -31,10 +45,6 @@ test("SSE stream with session → event-stream, published check arrives (REQ-024
   const delivered = await redisPublisher().publish("lunite:events", raw);
   expect(delivered).toBeGreaterThanOrEqual(1);
 
-  const reader = res.body!.getReader();
-  const decoder = new TextDecoder();
-  let received = "";
-  const deadline = Date.now() + 5000;
   while (Date.now() < deadline && !received.includes("sse-test-monitor")) {
     const { value, done } = await reader.read();
     if (done) break;

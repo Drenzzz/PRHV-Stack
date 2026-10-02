@@ -7,10 +7,18 @@ import { authed, createMonitor, signUp } from "./test-helpers";
 // TEST-M4-STATUS: status page CRUD + public read scoping (REQ-022, REQ-023).
 
 const db = dbPostgres();
+// Unique per run — the slug is globally unique, stale rows from an aborted
+// run would otherwise make these tests flaky.
+const RUN = Date.now().toString(36);
 
 afterAll(async () => {
+  // Children first — worker probes create checks/incidents for these monitors.
   await db.execute(sql`DELETE FROM status_page_monitors WHERE status_page_id IN (SELECT id FROM status_pages WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'sp-%@test.lunite.dev'))`);
   await db.execute(sql`DELETE FROM status_pages WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'sp-%@test.lunite.dev')`);
+  const owned = `(SELECT id FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'sp-%@test.lunite.dev'))`;
+  await db.execute(sql`DELETE FROM checks WHERE monitor_id IN ${sql.raw(owned)}`);
+  await db.execute(sql`DELETE FROM check_rollups WHERE monitor_id IN ${sql.raw(owned)}`);
+  await db.execute(sql`DELETE FROM incidents WHERE monitor_id IN ${sql.raw(owned)}`);
   await db.execute(sql`DELETE FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'sp-%@test.lunite.dev')`);
   await db.execute(sql`DELETE FROM "user" WHERE email LIKE 'sp-%@test.lunite.dev'`);
 });
@@ -20,7 +28,7 @@ test("create status page → 201, list shows it, public read requires no session
   const { monitor } = await createMonitor(user);
 
   const create = await testFetch(authed("POST", "/api/status-pages", user, {
-    slug: "sp-create-test",
+    slug: `sp-c-${RUN}`,
     title: "Acme Services",
     description: "Everything running",
     monitorIds: [monitor!.id],
@@ -29,10 +37,10 @@ test("create status page → 201, list shows it, public read requires no session
 
   const list = await testFetch(authed("GET", "/api/status-pages", user));
   const listBody = await list.json();
-  expect(listBody.pages.some((p: { slug: string }) => p.slug === "sp-create-test")).toBe(true);
+  expect(listBody.pages.some((p: { slug: string }) => p.slug === `sp-c-${RUN}`)).toBe(true);
 
   // Public read — no cookie at all.
-  const pub = await testFetch(new Request("http://localhost/api/status/sp-create-test"));
+  const pub = await testFetch(new Request(`http://localhost/api/status/sp-c-${RUN}`));
   expect(pub.status).toBe(200);
   const payload = await pub.json();
   expect(payload.title).toBe("Acme Services");
@@ -48,9 +56,9 @@ test("unknown slug → 404, invalid slug → 404 (no existence oracle)", async (
 
 test("duplicate slug → 409 CONFLICT", async () => {
   const user = await signUp("sp-dup");
-  const first = await testFetch(authed("POST", "/api/status-pages", user, { slug: "sp-dup-page", title: "A" }));
+  const first = await testFetch(authed("POST", "/api/status-pages", user, { slug: `sp-d-${RUN}`, title: "A" }));
   expect(first.status).toBe(201);
-  const second = await testFetch(authed("POST", "/api/status-pages", user, { slug: "sp-dup-page", title: "B" }));
+  const second = await testFetch(authed("POST", "/api/status-pages", user, { slug: `sp-d-${RUN}`, title: "B" }));
   expect(second.status).toBe(409);
 });
 
@@ -61,13 +69,13 @@ test("monitor not owned by creator is excluded from publish list (REQ-032)", asy
 
   // Attacker tries to publish someone else's monitor on their own status page.
   const create = await testFetch(authed("POST", "/api/status-pages", owner, {
-    slug: "sp-foreign-monitor",
+    slug: `sp-f-${RUN}`,
     title: "Leaky",
     monitorIds: [foreign!.id],
   }));
   expect(create.status).toBe(201);
 
-  const pub = await (await testFetch(new Request("http://localhost/api/status/sp-foreign-monitor"))).json();
+  const pub = await (await testFetch(new Request(`http://localhost/api/status/sp-f-${RUN}`))).json();
   expect(pub.monitors.length).toBe(0); // foreign monitor excluded
   expect(JSON.stringify(pub)).not.toContain(foreign!.id);
 });
@@ -75,7 +83,7 @@ test("monitor not owned by creator is excluded from publish list (REQ-032)", asy
 test("cross-user management → 404", async () => {
   const owner = await signUp("sp-mng-owner");
   const stranger = await signUp("sp-mng-stranger");
-  const created = await (await testFetch(authed("POST", "/api/status-pages", owner, { slug: "sp-managed", title: "Owned" }))).json();
+  const created = await (await testFetch(authed("POST", "/api/status-pages", owner, { slug: `sp-m-${RUN}`, title: "Owned" }))).json();
 
   const patch = await testFetch(authed("PATCH", `/api/status-pages/${created.page.id}`, stranger, { title: "Hacked" }));
   expect(patch.status).toBe(404);
@@ -92,7 +100,7 @@ test("patch updates title and monitor selection; delete → 204 then public 404"
   const user = await signUp("sp-patch");
   const { monitor } = await createMonitor(user);
   const created = await (await testFetch(authed("POST", "/api/status-pages", user, {
-    slug: "sp-patch-page", title: "Before", monitorIds: [],
+    slug: `sp-p-${RUN}`, title: "Before", monitorIds: [],
   }))).json();
 
   const patched = await testFetch(authed("PATCH", `/api/status-pages/${created.page.id}`, user, {
@@ -103,11 +111,11 @@ test("patch updates title and monitor selection; delete → 204 then public 404"
   const body = await patched.json();
   expect(body.page.title).toBe("After");
 
-  const pub = await (await testFetch(new Request("http://localhost/api/status/sp-patch-page"))).json();
+  const pub = await (await testFetch(new Request(`http://localhost/api/status/sp-p-${RUN}`))).json();
   expect(pub.title).toBe("After");
   expect(pub.monitors.length).toBe(1);
 
   const del = await testFetch(authed("DELETE", `/api/status-pages/${created.page.id}`, user));
   expect(del.status).toBe(204);
-  expect((await testFetch(new Request("http://localhost/api/status/sp-patch-page"))).status).toBe(404);
+  expect((await testFetch(new Request(`http://localhost/api/status/sp-p-${RUN}`))).status).toBe(404);
 });

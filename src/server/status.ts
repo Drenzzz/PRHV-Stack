@@ -9,6 +9,7 @@ import {
   buildPublicStatus,
   listStatusPages,
   getStatusPageBySlug,
+  SLUG_RE,
   type PublicStatusPayload,
 } from "../database/drizzle/queries/status";
 
@@ -18,7 +19,6 @@ const db = dbPostgres();
 // payload is cached in Redis for 60s (06 §7) and invalidated when the owner
 // edits the page; monitor/incident changes propagate within the TTL window.
 
-const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 const CACHE_TTL = 60;
 
 const createSchema = z.object({

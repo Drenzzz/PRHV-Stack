@@ -1,7 +1,11 @@
 import { sql } from "drizzle-orm";
 import { dbPostgres } from "../db";
+import type { DayCell } from "./dashboard";
 
 const db = dbPostgres();
+
+// Slug shape shared by API validation and SSR route guard (REQ-022).
+export const SLUG_RE = /^[a-z0-9-]{3,40}$/;
 
 // Status page data (REQ-022, REQ-023). Read path is public — only monitors the
 // owner explicitly placed on the page are ever included (05 §11).
@@ -21,7 +25,7 @@ export interface StatusPageMonitor {
   status: string;
   active: boolean;
   uptime90d: number | null;
-  bars: { day: string; uptime: number | null }[];
+  bars: DayCell[];
 }
 
 export interface PublicStatusPayload {
@@ -72,7 +76,8 @@ export async function getStatusPageMonitors(pageId: string): Promise<StatusPageM
     )
     SELECT spm.monitor_id AS "monitorId",
            to_char(cal.day, 'YYYY-MM-DD') AS day,
-           CASE WHEN SUM(r.count) > 0 THEN round(100.0 * SUM(r.ok_count) / SUM(r.count), 2)::float8 END AS uptime
+           CASE WHEN SUM(r.count) > 0 THEN round(100.0 * SUM(r.ok_count) / SUM(r.count), 2)::float8 END AS uptime,
+           COALESCE(SUM(r.count), 0)::int AS count
     FROM status_page_monitors spm
     CROSS JOIN cal
     LEFT JOIN check_rollups r
@@ -83,12 +88,12 @@ export async function getStatusPageMonitors(pageId: string): Promise<StatusPageM
     WHERE spm.status_page_id = ${pageId}
     GROUP BY spm.monitor_id, cal.day
     ORDER BY spm.monitor_id, cal.day
-  `)) as unknown as { monitorId: string; day: string; uptime: number | null }[];
+  `)) as unknown as { monitorId: string; day: string; uptime: number | null; count: number }[];
 
-  const byMonitor = new Map<string, { day: string; uptime: number | null }[]>();
+  const byMonitor = new Map<string, DayCell[]>();
   for (const bar of bars) {
     const list = byMonitor.get(bar.monitorId) ?? [];
-    list.push({ day: bar.day, uptime: bar.uptime });
+    list.push({ day: bar.day, uptime: bar.uptime, count: bar.count });
     byMonitor.set(bar.monitorId, list);
   }
 

@@ -28,11 +28,17 @@ export const liveEventsHandler: UniversalHandler = enhance(
 
         const subscriber = redisSubscriber();
         const onMessage = (channel: string, raw: string) => {
-          if (channel !== EVENTS_CHANNEL) return;
+          if (channel !== EVENTS_CHANNEL || closed) return;
           const event = decodeEvent(raw);
           if (!event) return;
           if (event.type === "check" && monitorFilter && !monitorFilter.includes(event.monitorId)) return;
-          send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+          try {
+            send(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+          } catch {
+            // client vanished between check and enqueue — closed flag catches the rest
+            closed = true;
+            clearInterval(heartbeat);
+          }
         };
         await subscriber.subscribe(EVENTS_CHANNEL);
         subscriber.on("message", onMessage);

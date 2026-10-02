@@ -44,15 +44,15 @@ test("rollup: bucket values match manual aggregates (TEST-001)", async () => {
   const { buckets } = await runRollup(new Date(Date.now() - 3600 * 1000));
   expect(buckets).toBeGreaterThanOrEqual(2); // 5m and 1h bucket sets exist
 
-  // Checks span an hour boundary (now-5m … now-30m), so the 1h set has 2 rows.
-  // Assert overall values by summing across them.
+  // Checks span ~25 minutes; depending on wall-clock vs the hour boundary the
+  // 1h set has 1–2 rows. Assert overall values by summing across them.
   const rows = (await db.execute(sql`
     SELECT count, ok_count, p50_ms, p95_ms, p99_ms, min_ms, max_ms
     FROM check_rollups WHERE monitor_id = ${MONITOR_ID} AND bucket_size_sec = 3600
     ORDER BY bucket_start
   `)) as unknown as Array<Record<string, unknown>>;
 
-  expect(rows.length).toBe(2);
+  expect(rows.length).toBeGreaterThanOrEqual(1);
   const totalCount = rows.reduce((s, r) => s + Number(r.count), 0);
   const totalOk = rows.reduce((s, r) => s + Number(r.ok_count), 0);
   expect(totalCount).toBe(6);

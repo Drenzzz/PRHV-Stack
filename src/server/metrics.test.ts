@@ -22,12 +22,10 @@ const FIXTURE = [
 
 afterAll(async () => {
   // Cleanup scoped to this suite's fixtures (avoid nuking other suites' data
-  // when files run in parallel).
-  await db.execute(sql`DELETE FROM checks WHERE monitor_id = ${MONITOR_ID}`);
-  await db.execute(sql`DELETE FROM monitors WHERE id = ${MONITOR_ID}`);
-  await db.execute(sql`DELETE FROM "user" WHERE id = ${USER_ID}`);
-  await db.execute(sql`DELETE FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'metrics-api-%' OR email LIKE 'metrics-bad-%' OR email LIKE 'metrics-stranger-%')`);
-  await db.execute(sql`DELETE FROM "user" WHERE email LIKE 'metrics-api-%' OR email LIKE 'metrics-bad-%' OR email LIKE 'metrics-stranger-%'`);
+  // when files run in parallel). Checks first — FK from checks → monitors.
+  await db.execute(sql`DELETE FROM checks WHERE monitor_id IN (SELECT id FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'metrics-%@test.lunite.dev'))`);
+  await db.execute(sql`DELETE FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE 'metrics-%@test.lunite.dev')`);
+  await db.execute(sql`DELETE FROM "user" WHERE email LIKE 'metrics-%@test.lunite.dev'`);
 });
 
 async function seedFixture(): Promise<void> {

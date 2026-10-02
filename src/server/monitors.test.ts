@@ -9,6 +9,8 @@ const db = dbPostgres();
 
 afterAll(async () => {
   // Tests create real users/monitors; sweep them so repeated runs stay clean.
+  // Checks first — FK from checks → monitors.
+  await db.execute(sql`DELETE FROM checks WHERE monitor_id IN (SELECT id FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE '%@test.lunite.dev'))`);
   await db.execute(sql`DELETE FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE '%@test.lunite.dev')`);
   await db.execute(sql`DELETE FROM "user" WHERE email LIKE '%@test.lunite.dev'`);
 });

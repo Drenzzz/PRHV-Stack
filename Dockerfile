@@ -16,6 +16,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=build /app/src/database ./src/database
 COPY --from=build /app/src/server/load.ts ./src/server/load.ts
+# Worker runs from TS source: its entrypoint + shared lib must ship in the runtime image.
+COPY --from=build /app/src/worker ./src/worker
+COPY --from=build /app/src/lib ./src/lib
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 EXPOSE 3000

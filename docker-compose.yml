@@ -27,6 +27,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      app:
+        condition: service_started
 
   postgres:
     image: postgres:17

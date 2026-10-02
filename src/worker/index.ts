@@ -9,6 +9,8 @@ import { recordCheck, applyProbeOutcome } from "./storage";
 import { evaluateContract } from "./contract";
 import { publishCheckEvent } from "./events";
 import { runRollup } from "./jobs/rollup";
+import { runRetention } from "./jobs/retention";
+import { ensurePartitions } from "./jobs/partitions";
 import type { ProbeResult } from "./prober";
 
 const env = workerEnv();
@@ -110,7 +112,15 @@ async function tick(n: number): Promise<void> {
 
 let n = 0;
 let lastRollup = 0;
+let lastRetention = 0;
 const ROLLUP_INTERVAL_MS = 5 * 60 * 1000;
+const RETENTION_INTERVAL_MS = 60 * 60 * 1000;
+// Ensure partitions at boot so early probes never hit a missing partition (REQ-041).
+try {
+  await ensurePartitions(2);
+} catch (e) {
+  console.error("[worker] partition ensure failed:", e instanceof Error ? e.message : e);
+}
 while (running) {
   n += 1;
   await tick(n);
@@ -121,6 +131,16 @@ while (running) {
       await runRollup();
     } catch (e) {
       console.error("[worker] rollup failed:", e instanceof Error ? e.message : e);
+    }
+  }
+  // Retention + partition maintenance hourly (REQ-016, REQ-041).
+  if (Date.now() - lastRetention >= RETENTION_INTERVAL_MS) {
+    lastRetention = Date.now();
+    try {
+      await runRetention();
+      await ensurePartitions(2);
+    } catch (e) {
+      console.error("[worker] retention failed:", e instanceof Error ? e.message : e);
     }
   }
   await Bun.sleep(TICK_MS);

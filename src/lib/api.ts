@@ -4,12 +4,12 @@
 
 import type { Monitor, NewMonitor } from "../database/drizzle/queries/monitors";
 import type { MonitorListRow, DayCell } from "../database/drizzle/queries/dashboard";
-import type { MetricsResult } from "../database/drizzle/queries/checks";
+import type { MetricsResult, BucketRow } from "../database/drizzle/queries/checks";
 import type { IncidentRow } from "../server/incidents";
 import type { PublicChannel } from "../server/channels";
 import type { ErrorCode } from "../server/http";
 
-export type { Monitor, NewMonitor, MonitorListRow, DayCell, MetricsResult, IncidentRow, PublicChannel, ErrorCode };
+export type { Monitor, NewMonitor, MonitorListRow, DayCell, BucketRow, MetricsResult, IncidentRow, PublicChannel, ErrorCode };
 
 // Error shape returned by every app route (04 §3). `/api/auth/*` uses Better
 // Auth's native shape and is not routed through here.

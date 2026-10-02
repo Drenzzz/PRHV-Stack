@@ -1,7 +1,7 @@
 {
   "name": "lunite",
   "scripts": {
-    "dev": "vike dev",
+    "dev": "vike dev --port 4114",
     "worker": "bun src/worker/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",

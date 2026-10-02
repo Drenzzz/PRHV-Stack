@@ -70,5 +70,5 @@ export async function claimDueMonitors(limit = 20): Promise<Monitor[]> {
     )
     RETURNING *;
   `);
-  return (result as unknown as { rows: Monitor[] }).rows ?? (result as unknown as Monitor[]);
+  return result as unknown as Monitor[];
 }

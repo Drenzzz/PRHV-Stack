@@ -5,9 +5,10 @@ import "./env";
 import { workerEnv } from "./env";
 import { claimDueMonitors } from "./scheduler";
 import { assertProbeTargetAllowed } from "./prober/ssrf";
-import { recordCheck, applyProbeOutcome } from "./storage";
+import { recordCheck } from "./storage";
+import { applyDebounce } from "./alerts/incidents";
+import { publishCheckEvent, publishIncidentEvent } from "./events";
 import { evaluateContract } from "./contract";
-import { publishCheckEvent } from "./events";
 import { runRollup } from "./jobs/rollup";
 import { runRetention } from "./jobs/retention";
 import { ensurePartitions } from "./jobs/partitions";
@@ -89,7 +90,7 @@ async function tick(n: number): Promise<void> {
         });
         const outcome: ProbeResult = { ...result, ok: verdict.ok, error: verdict.error ?? result.error };
         await recordCheck(monitor.id, env.region, outcome);
-        await applyProbeOutcome(monitor, outcome.ok);
+        const transition = await applyDebounce(monitor, outcome.ok);
         await publishCheckEvent({
           monitorId: monitor.id,
           ok: outcome.ok,
@@ -97,6 +98,15 @@ async function tick(n: number): Promise<void> {
           latencyMs: outcome.latencyMs,
           at: new Date().toISOString(),
         });
+        if (transition.kind !== "none") {
+          await publishIncidentEvent({
+            action: transition.kind === "open" ? "opened" : "resolved",
+            incidentId: transition.incidentId!,
+            monitorId: monitor.id,
+            at: new Date().toISOString(),
+          });
+          console.log(`[worker] incident ${transition.kind} for ${monitor.name} (${transition.reason})`);
+        }
         console.log(`[worker] probe ${monitor.name} ok=${outcome.ok} status=${outcome.statusCode} ${outcome.error ?? ""}`);
       } catch (e) {
         // Never let one bad monitor kill the loop (04 §4).

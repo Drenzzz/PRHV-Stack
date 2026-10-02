@@ -2,6 +2,7 @@ import { betterAuthHandler, betterAuthSessionMiddleware } from "./better-auth-ha
 import { dbMiddleware } from "./db-middleware";
 import { liveEventsHandler } from "./sse";
 import { metricsHandler } from "./metrics";
+import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
 import {
   createMonitorHandler,
   checkNowHandler,
@@ -31,6 +32,8 @@ function getApp() {
     deleteMonitorHandler,
     checkNowHandler,
     metricsHandler,
+    monitorIncidentsHandler,
+    allIncidentsHandler,
   ]);
 
   return app;

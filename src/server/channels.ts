@@ -25,7 +25,18 @@ function maskToken(): string {
   return "••••••••";
 }
 
-function publicChannel(row: ChannelRow) {
+// Shape of a channel as returned to the client — token is always masked (REQ-033).
+export interface PublicChannel {
+  id: string;
+  type: string;
+  chatId: string;
+  verified: boolean;
+  hasOwnToken: boolean;
+  token: string;
+  createdAt: string;
+}
+
+function publicChannel(row: ChannelRow): PublicChannel {
   return {
     id: row.id,
     type: row.type,

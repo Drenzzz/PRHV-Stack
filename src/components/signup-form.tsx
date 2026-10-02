@@ -19,9 +19,9 @@ export function SignupForm({
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-bold">Create your Lunite account</h1>
           <p className="text-sm text-balance text-muted-foreground">
-            Fill in the form below to create your account
+            Start watching your endpoints in a couple of minutes
           </p>
         </div>
         <Field>
@@ -41,7 +41,7 @@ export function SignupForm({
             id="email"
             name="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder="you@example.com"
             required
             className="bg-background"
           />

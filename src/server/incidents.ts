@@ -9,7 +9,7 @@ const db = dbPostgres();
 
 // Incident timeline API (REQ-020): per-monitor and account-wide, newest first.
 
-interface IncidentRow {
+export interface IncidentRow {
   id: string;
   monitorId: string;
   monitorName?: string;

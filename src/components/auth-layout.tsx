@@ -17,9 +17,10 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         </a>
         <blockquote className="relative space-y-2">
           <p className="font-heading text-2xl font-medium tracking-tight text-balance">
-            &ldquo;Authentication, dashboard, and database — already wired. Start from here, not from zero.&rdquo;
+            &ldquo;The watch that never sleeps. Watch your own endpoints with contract checks and
+            percentile latency.&rdquo;
           </p>
-          <footer className="text-sm opacity-70">The template README you wish you had</footer>
+          <footer className="text-sm opacity-70">Lunite — uptime &amp; latency monitoring</footer>
         </blockquote>
       </div>
     </div>

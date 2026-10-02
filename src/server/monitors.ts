@@ -2,6 +2,7 @@ import { enhance, type UniversalHandler } from "@universal-middleware/core";
 import { z } from "zod";
 import { notFound, conflict, unauthorized, validation } from "./http";
 import { requireUserId } from "./session";
+import { requirePrincipal } from "./auth-bearer";
 import {
   countMonitors,
   createMonitor,
@@ -47,8 +48,9 @@ async function readJson(request: Request): Promise<unknown> {
 
 export const listMonitorsHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
     return Response.json({ monitors: await listMonitorsEnriched(userId) });
   },
   { name: "lunite:list-monitors", path: "/api/monitors", method: "GET", immutable: false },
@@ -72,8 +74,9 @@ export const createMonitorHandler: UniversalHandler = enhance(
 
 export const getMonitorHandler: UniversalHandler = enhance(
   async (request, context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
     const monitor = await getMonitor(userId, runtime.params!.id);
     if (!monitor) return notFound();
     return Response.json({ monitor });

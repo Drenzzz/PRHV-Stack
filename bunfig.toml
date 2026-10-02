@@ -1,0 +1,5 @@
+[test]
+# Rate limits would block these suites: they create dozens of accounts per
+# minute from one IP. Limit logic itself is unit-tested in
+# src/server/rate-limit.test.ts with the default (enabled) path.
+preload = ["./src/test-setup.ts"]

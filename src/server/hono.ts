@@ -1,9 +1,11 @@
 import { betterAuthHandler, betterAuthSessionMiddleware } from "./better-auth-handler";
 import { dbMiddleware } from "./db-middleware";
+import { rateLimitMiddleware } from "./rate-limit";
 import { liveEventsHandler } from "./sse";
 import { metricsHandler, uptimeDailyHandler } from "./metrics";
 import { monitorIncidentsHandler, allIncidentsHandler } from "./incidents";
 import { createChannelHandler, listChannelsHandler, testChannelHandler } from "./channels";
+import { createApiKeyHandler, listApiKeysHandler, revokeApiKeyHandler } from "./api-keys";
 import {
   createStatusPageHandler,
   deleteStatusPageHandler,
@@ -28,6 +30,8 @@ function getApp() {
   vike(app, [
     // Make database available in Context as `context.db`
     dbMiddleware,
+    // Rate limits before anything else touches the DB (REQ-026)
+    rateLimitMiddleware,
     // Append Better Auth user to context
     betterAuthSessionMiddleware,
     // Better Auth route. See https://better-auth.com/docs/installation
@@ -51,6 +55,9 @@ function getApp() {
     updateStatusPageHandler,
     deleteStatusPageHandler,
     publicStatusHandler,
+    createApiKeyHandler,
+    listApiKeysHandler,
+    revokeApiKeyHandler,
   ]);
 
   return app;

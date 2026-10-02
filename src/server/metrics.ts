@@ -1,6 +1,7 @@
 import { enhance, type UniversalHandler } from "@universal-middleware/core";
 import { notFound, unauthorized, validation } from "./http";
 import { requireUserId } from "./session";
+import { requirePrincipal } from "./auth-bearer";
 import {
   BUCKET_SECONDS,
   RANGE_SECONDS,
@@ -21,8 +22,9 @@ function metricsId(request: Request): string {
 
 export const metricsHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
 
     const url = new URL(request.url);
     const id = metricsId(request);
@@ -56,8 +58,9 @@ export const metricsHandler: UniversalHandler = enhance(
 // 90-day uptime bar data (REQ-023): one cell per day, null = no data.
 export const uptimeDailyHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
 
     const id = metricsId(request);
     if (!(await monitorExistsForUser(id, userId))) return notFound();

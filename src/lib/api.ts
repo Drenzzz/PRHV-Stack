@@ -8,9 +8,10 @@ import type { MetricsResult, BucketRow } from "../database/drizzle/queries/check
 import type { IncidentRow } from "../server/incidents";
 import type { PublicChannel } from "../server/channels";
 import type { PublicStatusPage } from "../server/status";
+import type { PublicApiKey } from "../server/api-keys";
 import type { ErrorCode } from "../server/http";
 
-export type { Monitor, NewMonitor, MonitorListRow, DayCell, BucketRow, MetricsResult, IncidentRow, PublicChannel, PublicStatusPage, ErrorCode };
+export type { Monitor, NewMonitor, MonitorListRow, DayCell, BucketRow, MetricsResult, IncidentRow, PublicChannel, PublicStatusPage, PublicApiKey, ErrorCode };
 
 // Error shape returned by every app route (04 §3). `/api/auth/*` uses Better
 // Auth's native shape and is not routed through here.
@@ -125,4 +126,10 @@ export const api = {
     request<{ page: PublicStatusPage }>(`/api/status-pages/${id}`, json("PATCH", data)),
 
   deleteStatusPage: (id: string) => request<void>(`/api/status-pages/${id}`, json("DELETE")),
+
+  createApiKey: (name: string) => request<{ key: PublicApiKey; secret: string }>("/api-keys", json("POST", { name })),
+
+  listApiKeys: () => request<{ keys: PublicApiKey[] }>("/api-keys"),
+
+  revokeApiKey: (id: string) => request<void>(`/api-keys/${id}`, json("DELETE")),
 };

@@ -1,6 +1,7 @@
 import { enhance, type UniversalHandler } from "@universal-middleware/core";
 import { notFound, unauthorized } from "./http";
 import { requireUserId } from "./session";
+import { requirePrincipal } from "./auth-bearer";
 import { monitorExistsForUser } from "../database/drizzle/queries/checks";
 import { sql } from "drizzle-orm";
 import { dbPostgres } from "../database/drizzle/db";
@@ -39,8 +40,9 @@ function limitOffset(url: URL): { limit: number; offset: number } {
 
 export const monitorIncidentsHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
 
     const id = new URL(request.url).pathname.split("/")[3] ?? "";
     if (!(await monitorExistsForUser(id, userId))) return notFound();
@@ -54,8 +56,9 @@ export const monitorIncidentsHandler: UniversalHandler = enhance(
 
 export const allIncidentsHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
-    const userId = await requireUserId(request, runtime);
-    if (!userId) return unauthorized();
+    const principal = await requirePrincipal(request, runtime);
+    if (!principal) return unauthorized();
+    const userId = principal.userId;
 
     const { limit, offset } = limitOffset(new URL(request.url));
     const incidents = await fetchIncidents(sql`m.user_id = ${userId}`, limit, offset);

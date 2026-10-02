@@ -46,12 +46,7 @@ export const createChannelHandler: UniversalHandler = enhance(
   async (request, _context, runtime) => {
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
-    let parsed: z.SafeParseReturnType<unknown, { token?: string; chatId: string }>;
-    try {
-      parsed = createSchema.safeParse(await request.json());
-    } catch {
-      return validation("Invalid body");
-    }
+    const parsed = createSchema.safeParse(await request.json().catch(() => undefined));
     if (!parsed.success) {
       return validation("Invalid body", parsed.error.issues.map((i) => ({ path: i.path.join("."), reason: i.message })));
     }

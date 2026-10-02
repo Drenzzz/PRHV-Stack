@@ -116,7 +116,6 @@ CREATE UNIQUE INDEX "api_keys_key_hash_unique" ON "api_keys" USING btree ("key_h
 CREATE INDEX "api_keys_user_id_idx" ON "api_keys" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "check_rollups_bucket_unique" ON "check_rollups" USING btree ("monitor_id","bucket_start","bucket_size_sec");--> statement-breakpoint
 CREATE INDEX "check_rollups_monitor_start_idx" ON "check_rollups" USING btree ("monitor_id","bucket_start");--> statement-breakpoint
-CREATE INDEX "checks_monitor_checked_idx" ON "checks" USING btree ("monitor_id","checked_at");--> statement-breakpoint
 CREATE INDEX "incidents_monitor_started_idx" ON "incidents" USING btree ("monitor_id","started_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "status_page_monitors_page_idx" ON "status_page_monitors" USING btree ("status_page_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "status_pages_slug_unique" ON "status_pages" USING btree ("slug");--> statement-breakpoint

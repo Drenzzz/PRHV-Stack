@@ -7,16 +7,35 @@ import { claimDueMonitors } from "./scheduler";
 import { assertProbeTargetAllowed } from "./prober/ssrf";
 import { recordCheck } from "./storage";
 import { applyDebounce } from "./alerts/incidents";
+import { notifyIncident, incidentMessage, recoveryMessage } from "./alerts/telegram";
 import { publishCheckEvent, publishIncidentEvent } from "./events";
 import { evaluateContract } from "./contract";
 import { runRollup } from "./jobs/rollup";
 import { runRetention } from "./jobs/retention";
 import { ensurePartitions } from "./jobs/partitions";
 import type { ProbeResult } from "./prober";
+import { sql } from "drizzle-orm";
+import { dbPostgres } from "../database/drizzle/db";
 
+const db = dbPostgres();
 const env = workerEnv();
 const TICK_MS = 1000;
 const CLAIM_LIMIT = 20;
+
+// Resolve the monitor's rule → channel and send. Kept outside the critical
+// path; failures are logged inside notifyIncident (REQ-021).
+async function notifyMonitorChannel(monitorId: string, message: string): Promise<void> {
+  try {
+    const rows = await db.execute(sql`
+      SELECT channel_id FROM alert_rules WHERE monitor_id = ${monitorId} AND enabled LIMIT 1
+    `) as unknown as Array<{ channel_id: string }>;
+    if (rows.length > 0) {
+      await notifyIncident(rows[0].channel_id, message);
+    }
+  } catch (e) {
+    console.error(`[worker] notify for ${monitorId} failed:`, e instanceof Error ? e.message : e);
+  }
+}
 
 console.log(`[worker] boot region=${env.region} tick=${TICK_MS}ms`);
 
@@ -105,6 +124,13 @@ async function tick(n: number): Promise<void> {
             monitorId: monitor.id,
             at: new Date().toISOString(),
           });
+          // Telegram dispatch is fire-and-forget: never blocks the probe loop
+          // (REQ-021). A channel is found via the monitor's alert rule (1/monitor).
+          if (transition.kind === "open") {
+            void notifyMonitorChannel(monitor.id, incidentMessage(monitor.name, monitor.url, outcome.error, new Date()));
+          } else if (transition.kind === "resolve") {
+            void notifyMonitorChannel(monitor.id, recoveryMessage(monitor.name, monitor.url, new Date(Date.now() - 60 * 1000)));
+          }
           console.log(`[worker] incident ${transition.kind} for ${monitor.name} (${transition.reason})`);
         }
         console.log(`[worker] probe ${monitor.name} ok=${outcome.ok} status=${outcome.statusCode} ${outcome.error ?? ""}`);

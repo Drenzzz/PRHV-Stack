@@ -5,6 +5,7 @@ import {
   BUCKET_SECONDS,
   RANGE_SECONDS,
   metricsFromRaw,
+  metricsFromRollups,
   monitorExistsForUser,
 } from "../database/drizzle/queries/checks";
 
@@ -39,7 +40,13 @@ export const metricsHandler: UniversalHandler = enhance(
 
     if (!(await monitorExistsForUser(id, userId))) return notFound();
 
-    const result = await metricsFromRaw(id, range, bucket);
+    // CF-003: raw checks are retained 7 days — windows beyond that read rollups
+    // (bucket-level approximation, documented in the OpenAPI descriptions at M4).
+    const RAW_MAX_SEC = RANGE_SECONDS["7d"];
+    const result =
+      RANGE_SECONDS[range] <= RAW_MAX_SEC
+        ? await metricsFromRaw(id, range, bucket)
+        : await metricsFromRollups(id, range, bucket);
     return Response.json(result);
   },
   { name: "lunite:metrics", path: "/api/monitors/:id/metrics", method: "GET", immutable: false },

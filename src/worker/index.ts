@@ -8,6 +8,7 @@ import { assertProbeTargetAllowed } from "./prober/ssrf";
 import { recordCheck, applyProbeOutcome } from "./storage";
 import { evaluateContract } from "./contract";
 import { publishCheckEvent } from "./events";
+import { runRollup } from "./jobs/rollup";
 import type { ProbeResult } from "./prober";
 
 const env = workerEnv();
@@ -108,9 +109,20 @@ async function tick(n: number): Promise<void> {
 }
 
 let n = 0;
+let lastRollup = 0;
+const ROLLUP_INTERVAL_MS = 5 * 60 * 1000;
 while (running) {
   n += 1;
   await tick(n);
+  // Rollup every ~5 minutes (REQ-015); idempotent so overlap is safe.
+  if (Date.now() - lastRollup >= ROLLUP_INTERVAL_MS) {
+    lastRollup = Date.now();
+    try {
+      await runRollup();
+    } catch (e) {
+      console.error("[worker] rollup failed:", e instanceof Error ? e.message : e);
+    }
+  }
   await Bun.sleep(TICK_MS);
 }
 console.log("[worker] stopped");

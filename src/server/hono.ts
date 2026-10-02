@@ -3,6 +3,7 @@ import { dbMiddleware } from "./db-middleware";
 import { liveEventsHandler } from "./sse";
 import {
   createMonitorHandler,
+  checkNowHandler,
   deleteMonitorHandler,
   getMonitorHandler,
   listMonitorsHandler,
@@ -27,6 +28,7 @@ function getApp() {
     getMonitorHandler,
     updateMonitorHandler,
     deleteMonitorHandler,
+    checkNowHandler,
   ]);
 
   return app;

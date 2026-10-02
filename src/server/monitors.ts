@@ -10,6 +10,7 @@ import {
   listMonitors,
   updateMonitor,
 } from "../database/drizzle/queries/monitors";
+import { claimMonitorNow } from "../worker/scheduler";
 
 // Monitor CRUD (REQ-005..008). Ownership → 404 without leak (REQ-032).
 // Limits per plan defaults: min interval 30s, max 20 monitors/user (OQ-005 resolved).
@@ -34,11 +35,6 @@ const updateSchema = createSchema.partial().extend({
 
 function zodFields(error: z.ZodError) {
   return error.issues.map((i) => ({ path: i.path.join("."), reason: i.message }));
-}
-
-function monitorId(request: Request): string {
-  // Matches path "/api/monitors/:id".
-  return new URL(request.url).pathname.split("/").pop() ?? "";
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -75,10 +71,10 @@ export const createMonitorHandler: UniversalHandler = enhance(
 );
 
 export const getMonitorHandler: UniversalHandler = enhance(
-  async (request, _context, runtime) => {
+  async (request, context, runtime) => {
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
-    const monitor = await getMonitor(userId, monitorId(request));
+    const monitor = await getMonitor(userId, runtime.params!.id);
     if (!monitor) return notFound();
     return Response.json({ monitor });
   },
@@ -86,7 +82,7 @@ export const getMonitorHandler: UniversalHandler = enhance(
 );
 
 export const updateMonitorHandler: UniversalHandler = enhance(
-  async (request, _context, runtime) => {
+  async (request, context, runtime) => {
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
     const parsed = updateSchema.safeParse(await readJson(request));
@@ -97,7 +93,7 @@ export const updateMonitorHandler: UniversalHandler = enhance(
       ...fields,
       ...(active === undefined ? {} : { active, nextCheckAt: active ? new Date() : null }),
     };
-    const updated = await updateMonitor(userId, monitorId(request), patch);
+    const updated = await updateMonitor(userId, runtime.params!.id, patch);
     if (!updated) return notFound();
     return Response.json({ monitor: updated });
   },
@@ -105,12 +101,27 @@ export const updateMonitorHandler: UniversalHandler = enhance(
 );
 
 export const deleteMonitorHandler: UniversalHandler = enhance(
-  async (request, _context, runtime) => {
+  async (request, context, runtime) => {
     const userId = await requireUserId(request, runtime);
     if (!userId) return unauthorized();
-    const deleted = await deleteMonitor(userId, monitorId(request));
+    const deleted = await deleteMonitor(userId, runtime.params!.id);
     if (!deleted) return notFound();
     return new Response(null, { status: 204 });
   },
   { name: "lunite:delete-monitor", path: "/api/monitors/:id", method: "DELETE", immutable: false },
+);
+
+// Manual "check now" (REQ-030): schedule an immediate probe. Paused monitors
+// are rejected — a paused monitor must not be probed until resumed (REQ-007).
+export const checkNowHandler: UniversalHandler = enhance(
+  async (request, context, runtime) => {
+    const userId = await requireUserId(request, runtime);
+    if (!userId) return unauthorized();
+    const monitor = await getMonitor(userId, runtime.params!.id);
+    if (!monitor) return notFound();
+    if (!monitor.active) return conflict("Monitor is paused");
+    await claimMonitorNow(userId, runtime.params!.id);
+    return Response.json({}, { status: 202 });
+  },
+  { name: "lunite:check-now", path: "/api/monitors/:id/check", method: "POST", immutable: false },
 );

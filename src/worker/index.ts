@@ -6,6 +6,7 @@ import { workerEnv } from "./env";
 import { claimDueMonitors } from "./scheduler";
 import { assertProbeTargetAllowed } from "./prober/ssrf";
 import { recordCheck } from "./storage";
+import { refreshSslExpiry } from "./jobs/ssl";
 import { applyDebounce } from "./alerts/incidents";
 import { notifyIncident, incidentMessage, recoveryMessage } from "./alerts/telegram";
 import { publishCheckEvent, publishIncidentEvent } from "./events";
@@ -134,6 +135,24 @@ async function tick(n: number): Promise<void> {
           console.log(`[worker] incident ${transition.kind} for ${monitor.name} (${transition.reason})`);
         }
         console.log(`[worker] probe ${monitor.name} ok=${outcome.ok} status=${outcome.statusCode} ${outcome.error ?? ""}`);
+
+        // SSL expiry (REQ-028): best-effort refresh, alert only on the first
+        // read inside the ≤14-day window — repeated probes never re-send.
+        if (monitor.sslCheck) {
+          try {
+            const ssl = await refreshSslExpiry(monitor);
+            if (ssl?.shouldAlert) {
+              const days = Math.floor((new Date(ssl.expiresAt!).getTime() - Date.now()) / 86400000);
+              void notifyMonitorChannel(
+                monitor.id,
+                `🔐 SSL EXPIRING — ${monitor.name}\nCertificate expires in ${days} day(s): ${ssl.expiresAt!.slice(0, 10)}\n${monitor.url}`,
+              );
+              console.log(`[worker] ssl alert for ${monitor.name}: expires ${ssl.expiresAt}`);
+            }
+          } catch (e) {
+            console.error(`[worker] ssl refresh failed for ${monitor.name}:`, e instanceof Error ? e.message : e);
+          }
+        }
       } catch (e) {
         // Never let one bad monitor kill the loop (04 §4).
         console.error(`[worker] probe ${monitor.name} failed hard:`, e instanceof Error ? e.message : e);

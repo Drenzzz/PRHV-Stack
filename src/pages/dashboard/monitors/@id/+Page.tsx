@@ -131,6 +131,9 @@ export default function Page() {
   }
 
   const status = (monitor.currentStatus ?? "unknown") as MonitorStatus;
+  const sslDaysLeft = monitor.sslExpiresAt
+    ? Math.floor((new Date(monitor.sslExpiresAt).getTime() - Date.now()) / 86400000)
+    : null;
 
   return (
     <div className="flex flex-1 flex-col gap-5 py-4 lg:px-6">
@@ -151,6 +154,17 @@ export default function Page() {
             {!monitor.active && <Badge variant="secondary">Paused</Badge>}
           </div>
           <p className="mt-1 font-mono text-xs text-muted-foreground">{monitor.url}</p>
+          {monitor.sslExpiresAt && sslDaysLeft !== null && (
+            <p className="font-mono text-xs text-muted-foreground">
+              SSL expires{" "}
+              <span
+                style={{ color: sslDaysLeft <= 14 ? "var(--status-degraded)" : undefined }}
+              >
+                {new Date(monitor.sslExpiresAt).toISOString().slice(0, 10)}
+              </span>
+              {" "}({sslDaysLeft}d)
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{liveStatus === "live" ? "Live" : liveStatus}</span>

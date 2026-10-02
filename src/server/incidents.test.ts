@@ -45,6 +45,8 @@ function claimed(id: string) {
     intervalSec: 60, timeoutMs: 10000, active: true, nextCheckAt: null,
     currentStatus: "unknown", expectedStatus: null, expectedKeywords: [],
     consecutiveFailures: 0, consecutiveSuccesses: 0,
+    sslCheck: false,
+    sslExpiresAt: null,
   };
 }
 

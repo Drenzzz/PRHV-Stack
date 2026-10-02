@@ -25,6 +25,8 @@ export interface ClaimedMonitor {
   expectedKeywords: unknown;
   consecutiveFailures: number;
   consecutiveSuccesses: number;
+  sslCheck: boolean;
+  sslExpiresAt: string | null;
 }
 
 export async function claimDueMonitors(limit = 20): Promise<ClaimedMonitor[]> {
@@ -41,7 +43,8 @@ export async function claimDueMonitors(limit = 20): Promise<ClaimedMonitor[]> {
     RETURNING id, user_id AS "userId", name, url, method, interval_sec AS "intervalSec",
               timeout_ms AS "timeoutMs", active, next_check_at AS "nextCheckAt", current_status AS "currentStatus",
               expected_status AS "expectedStatus", expected_keywords AS "expectedKeywords",
-              consecutive_failures AS "consecutiveFailures", consecutive_successes AS "consecutiveSuccesses";
+              consecutive_failures AS "consecutiveFailures", consecutive_successes AS "consecutiveSuccesses",
+              ssl_check AS "sslCheck", ssl_expires_at AS "sslExpiresAt";
   `);
   return result as unknown as ClaimedMonitor[];
 }

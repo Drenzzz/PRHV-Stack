@@ -1,16 +1,16 @@
 import { afterAll, expect, test } from "bun:test";
+import { sql } from "drizzle-orm";
 import { testFetch } from "../+server";
+import { dbPostgres } from "../database/drizzle/db";
 import { authed, createMonitor, signUp } from "./test-helpers";
 
 // TEST-004: monitor CRUD + ownership matrix (REQ-005..008, REQ-032).
-const createdIds: string[] = [];
+const db = dbPostgres();
 
 afterAll(async () => {
-  // Best-effort cleanup of monitors created by this suite.
-  const user = await signUp("cleanup");
-  for (const id of createdIds) {
-    await testFetch(authed("DELETE", `/api/monitors/${id}`, user));
-  }
+  // Tests create real users/monitors; sweep them so repeated runs stay clean.
+  await db.execute(sql`DELETE FROM monitors WHERE user_id IN (SELECT id FROM "user" WHERE email LIKE '%@test.lunite.dev')`);
+  await db.execute(sql`DELETE FROM "user" WHERE email LIKE '%@test.lunite.dev'`);
 });
 
 test("unauthenticated monitor list → 401 with taxonomy code", async () => {
@@ -27,7 +27,7 @@ test("create monitor → 201, scheduled immediately (CF-010 default)", async () 
   expect(monitor!.active).toBe(true);
   expect(monitor!.intervalSec).toBe(30);
   expect(monitor!.nextCheckAt).toBeTruthy();
-  if (monitor) createdIds.push(monitor.id);
+
 });
 
 test("invalid body → 422 VALIDATION with fields", async () => {
@@ -71,7 +71,7 @@ test("list returns only caller's monitors (REQ-006)", async () => {
   const b = await signUp("listb");
   const ma = await createMonitor(a);
   const mb = await createMonitor(b);
-  createdIds.push(ma.monitor!.id, mb.monitor!.id);
+
 
   const listA = await (await testFetch(authed("GET", "/api/monitors", a))).json();
   const listB = await (await testFetch(authed("GET", "/api/monitors", b))).json();
@@ -84,7 +84,7 @@ test("pause/resume flips active and next_check_at (REQ-007)", async () => {
   const user = await signUp("pause");
   const { monitor } = await createMonitor(user);
   const id = monitor!.id;
-  createdIds.push(id);
+
 
   const paused = await (await testFetch(authed("PATCH", `/api/monitors/${id}`, user, { active: false }))).json();
   expect(paused.monitor.active).toBe(false);

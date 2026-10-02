@@ -4,9 +4,10 @@
 import "./env";
 import { workerEnv } from "./env";
 import { claimDueMonitors } from "./scheduler";
-import { probe } from "./prober";
 import { assertProbeTargetAllowed } from "./prober/ssrf";
-import { recordCheck } from "./storage";
+import { recordCheck, applyProbeOutcome } from "./storage";
+import { evaluateContract } from "./contract";
+import type { ProbeResult } from "./prober";
 
 const env = workerEnv();
 const TICK_MS = 1000;
@@ -37,11 +38,55 @@ async function tick(n: number): Promise<void> {
     await Promise.all(claimed.slice(i, i + BATCH).map(async (monitor) => {
       try {
         const guard = await assertProbeTargetAllowed(monitor.url);
-        const result = guard.allowed
-          ? await probe(monitor.url, monitor.timeoutMs)
-          : { ok: false, statusCode: null, ttfbMs: null, latencyMs: null, error: guard.reason ?? "target blocked" };
-        await recordCheck(monitor.id, env.region, result);
-        console.log(`[worker] probe ${monitor.name} ok=${result.ok} status=${result.statusCode} ${result.error ?? ""}`);
+        let result: ProbeResult;
+        let bodyText: string | null = null;
+        if (guard.allowed) {
+          // Contract probes need the body for keyword scans; fetch it directly here
+          // (prober stays body-free for M1's simple success path).
+          const started = performance.now();
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), monitor.timeoutMs);
+          try {
+            const res = await fetch(monitor.url, {
+              method: monitor.method,
+              signal: controller.signal,
+              redirect: "follow",
+              headers: { "user-agent": "Lunite/1.0 (+uptime monitor)" },
+            });
+            bodyText = await res.text();
+            result = {
+              ok: true,
+              statusCode: res.status,
+              ttfbMs: Math.round(performance.now() - started),
+              latencyMs: Math.round(performance.now() - started),
+              error: null,
+            };
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            const timedOut = message.includes("abort") || message.includes("Timeout");
+            result = {
+              ok: false,
+              statusCode: null,
+              ttfbMs: null,
+              latencyMs: Math.round(performance.now() - started),
+              error: timedOut ? `timed out after ${monitor.timeoutMs}ms` : message,
+            };
+          } finally {
+            clearTimeout(timer);
+          }
+        } else {
+          result = { ok: false, statusCode: null, ttfbMs: null, latencyMs: null, error: guard.reason ?? "target blocked" };
+        }
+
+        const expectedKeywords = Array.isArray(monitor.expectedKeywords) ? monitor.expectedKeywords as string[] : [];
+        const verdict = evaluateContract(result.ok, result.statusCode, bodyText, {
+          expectedStatus: monitor.expectedStatus ?? null,
+          expectedKeywords,
+        });
+        const outcome: ProbeResult = { ...result, ok: verdict.ok, error: verdict.error ?? result.error };
+        await recordCheck(monitor.id, env.region, outcome);
+        await applyProbeOutcome(monitor, outcome.ok);
+        console.log(`[worker] probe ${monitor.name} ok=${outcome.ok} status=${outcome.statusCode} ${outcome.error ?? ""}`);
       } catch (e) {
         // Never let one bad monitor kill the loop (04 §4).
         console.error(`[worker] probe ${monitor.name} failed hard:`, e instanceof Error ? e.message : e);

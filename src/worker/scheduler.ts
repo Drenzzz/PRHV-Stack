@@ -21,6 +21,8 @@ export interface ClaimedMonitor {
   active: boolean;
   nextCheckAt: string | null;
   currentStatus: string;
+  expectedStatus: number | null;
+  expectedKeywords: unknown;
 }
 
 export async function claimDueMonitors(limit = 20): Promise<ClaimedMonitor[]> {
@@ -35,7 +37,8 @@ export async function claimDueMonitors(limit = 20): Promise<ClaimedMonitor[]> {
       FOR UPDATE SKIP LOCKED
     )
     RETURNING id, user_id AS "userId", name, url, method, interval_sec AS "intervalSec",
-              timeout_ms AS "timeoutMs", active, next_check_at AS "nextCheckAt", current_status AS "currentStatus";
+              timeout_ms AS "timeoutMs", active, next_check_at AS "nextCheckAt", current_status AS "currentStatus",
+              expected_status AS "expectedStatus", expected_keywords AS "expectedKeywords";
   `);
   return result as unknown as ClaimedMonitor[];
 }

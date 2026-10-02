@@ -29,6 +29,20 @@
       "when": 1790847604329,
       "tag": "0003_long_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790934319092,
+      "tag": "0004_overrated_epoch",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791024000000,
+      "tag": "0005_checks_partitions",
+      "breakpoints": true
     }
   ]
 }

@@ -98,6 +98,15 @@
   --radius-3xl: calc(var(--radius) * 2.2);
 
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Lunite status language (DS-002): registered once, referenced by every
+     status surface through statusColor()/StatusBadge. Never decorative. */
+  --color-status-up: var(--status-up);
+  --color-status-down: var(--status-down);
+  --color-status-degraded: var(--status-degraded);
+  --color-status-paused: var(--status-paused);
+  --color-status-unknown: var(--status-unknown);
+  --color-live: var(--live);
 }
 
 :root {
@@ -165,6 +174,17 @@
   --sidebar-border: oklch(0.922 0 0);
 
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* DS-001: lunar indigo primary (light) */
+  --primary: oklch(0.54 0.22 275);
+
+  /* DS-002 status language — up/down/degraded/paused/unknown + live dot */
+  --status-up: oklch(0.55 0.15 160);
+  --status-down: oklch(0.55 0.21 25);
+  --status-degraded: oklch(0.7 0.16 70);
+  --status-paused: oklch(0.55 0.02 260);
+  --status-unknown: oklch(0.65 0.02 260);
+  --live: oklch(0.55 0.15 160);
 }
 
 .dark {
@@ -230,4 +250,15 @@
   --sidebar-border: oklch(1 0 0 / 10%);
 
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* DS-001: lunar indigo primary, lifted for dark surfaces */
+  --primary: oklch(0.68 0.19 275);
+
+  /* DS-002 status language (dark) */
+  --status-up: oklch(0.7 0.17 160);
+  --status-down: oklch(0.65 0.2 25);
+  --status-degraded: oklch(0.78 0.15 75);
+  --status-paused: oklch(0.7 0.02 260);
+  --status-unknown: oklch(0.6 0.02 260);
+  --live: oklch(0.7 0.17 160);
 }

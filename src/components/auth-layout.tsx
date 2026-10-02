@@ -13,7 +13,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         />
         <a href="/" className="relative flex items-center gap-2">
           <img src={logoUrl} height={32} width={32} alt="logo" className="invert" />
-          <span className="font-heading text-lg font-semibold tracking-tight">My Vike app</span>
+          <span className="font-heading text-lg font-semibold tracking-tight">Lunite</span>
         </a>
         <blockquote className="relative space-y-2">
           <p className="font-heading text-2xl font-medium tracking-tight text-balance">

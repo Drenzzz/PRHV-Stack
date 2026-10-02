@@ -1,4 +1,4 @@
-import { IconChartBar, IconDatabase, IconLock } from "@tabler/icons-react";
+import { IconChartBar, IconActivity, IconBell } from "@tabler/icons-react";
 import { Badge } from "../../components/ui/badge";
 import { buttonVariants } from "../../components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
@@ -7,19 +7,19 @@ import logoUrl from "../../assets/logo.svg";
 
 const features = [
   {
-    Icon: IconLock,
-    title: "Email authentication",
-    description: "Sign up, log in, and sessions — powered by Better Auth with a Drizzle Postgres store.",
+    Icon: IconActivity,
+    title: "Contract-checked probes",
+    description: "HTTP/HTTPS checks that verify expected status and body keywords — not just a ping.",
   },
   {
     Icon: IconChartBar,
-    title: "Dashboard included",
-    description: "Sidebar, charts, and data tables from shadcn/ui blocks, ready to extend.",
+    title: "Percentile latency",
+    description: "p50, p95, and p99 over selectable windows, backed by time-series rollups.",
   },
   {
-    Icon: IconDatabase,
-    title: "SSR + database",
-    description: "Vike server rendering with Hono and Drizzle. Data loads on the server, hydrates on the client.",
+    Icon: IconBell,
+    title: "Debounced Telegram alerts",
+    description: "Incidents open after repeated failures and recover quietly — no alert fatigue.",
   },
 ];
 
@@ -29,7 +29,7 @@ export default function Page() {
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between p-5">
         <a href="/" className="flex items-center gap-2">
           <img src={logoUrl} height={32} width={32} alt="logo" />
-          <span className="font-heading text-lg font-semibold tracking-tight">My Vike app</span>
+          <span className="font-heading text-lg font-semibold tracking-tight">Lunite</span>
         </a>
         <nav className="flex items-center gap-2">
           <a href="/login" className={cn(buttonVariants({ variant: "ghost" }))}>
@@ -43,13 +43,13 @@ export default function Page() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-12 p-5 py-16">
         <div className="flex max-w-2xl flex-col items-start gap-5">
-          <Badge>Template</Badge>
+          <Badge>Monitoring</Badge>
           <h1 className="font-heading text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Start your app from here, not from zero
+            The watch that never sleeps
           </h1>
           <p className="text-lg text-muted-foreground text-balance">
-            Landing page, authentication, and dashboard — already wired with Vike, Hono, Drizzle,
-            and shadcn/ui.
+            HTTP uptime monitoring with contract checks, p50/p95/p99 latency, and debounced
+            Telegram alerts. Public status pages included.
           </p>
           <div className="flex flex-wrap gap-3">
             <a href="/signup" className={cn(buttonVariants({ variant: "default", size: "lg" }))}>
@@ -77,7 +77,7 @@ export default function Page() {
       </main>
 
       <footer className="mx-auto w-full max-w-5xl p-5 text-sm text-muted-foreground">
-        Built with Vike, Hono, Drizzle, Better Auth, and shadcn/ui.
+        Lunite — uptime &amp; latency monitoring.
       </footer>
     </div>
   );

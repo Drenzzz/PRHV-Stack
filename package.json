@@ -9,7 +9,6 @@
     "drizzle:generate": "drizzle-kit generate",
     "drizzle:migrate": "drizzle-kit migrate",
     "drizzle:studio": "drizzle-kit studio",
-    "db:seed": "bun src/database/seed.ts",
     "lint": "oxlint --type-aware .",
     "prod": "vike build && bun ./dist/server/index.mjs"
   },

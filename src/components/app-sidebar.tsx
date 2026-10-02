@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconDashboard, IconListDetails, IconChartBar, IconFolder, IconUsers, IconCamera, IconFileDescription, IconFileAi, IconSettings, IconHelp, IconSearch, IconDatabase, IconReport, IconFileWord, IconInnerShadowTop, IconShoppingBag } from "@tabler/icons-react"
+import { IconDashboard, IconListDetails, IconChartBar, IconFolder, IconUsers, IconCamera, IconFileDescription, IconFileAi, IconSettings, IconHelp, IconSearch, IconDatabase, IconReport, IconFileWord, IconInnerShadowTop } from "@tabler/icons-react"
 
 const data = {
   navMain: [
@@ -28,10 +28,10 @@ const data = {
       ),
     },
     {
-      title: "Products",
-      url: "/dashboard/products",
+      title: "Monitors",
+      url: "#",
       icon: (
-        <IconShoppingBag
+        <IconListDetails
         />
       ),
     },
@@ -189,7 +189,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               render={<a href="/" aria-label="Home" />}
             >
               <IconInnerShadowTop className="size-5!" />
-              <span className="text-base font-semibold">My Vike app</span>
+              <span className="text-base font-semibold">Lunite</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -32,15 +32,5 @@ export function getAuthConfig(runtime?: RuntimeAdapter): BetterAuthOptions {
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean),
-    // GitHub is only enabled once its credentials are set, so the app runs out of the box without them.
-    socialProviders:
-      env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-        ? {
-            github: {
-              clientId: env.GITHUB_CLIENT_ID,
-              clientSecret: env.GITHUB_CLIENT_SECRET,
-            },
-          }
-        : {},
   };
 }

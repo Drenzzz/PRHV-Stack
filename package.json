@@ -24,7 +24,7 @@
     "@tabler/icons-react": "^3.48.0",
     "@tanstack/react-table": "^9.2.6",
     "@universal-middleware/core": "^0.6.2",
-    "@vikejs/hono": "^0.2.1",
+    "@vikejs/hono": "^0.3.0",
     "better-auth": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
